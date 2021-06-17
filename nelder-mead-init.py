@@ -56,8 +56,16 @@ def write_poten(vertex, filename):
         h_poten.write(str(vertex.density[x]) + ' ')
     h_poten.close()
 
+def find_peak():
+    os.system('gen-ns')
+    os.system('./ns_analyse 64Cu.energies -M 0 -n 600 -D 5 > pf')
+    T,Cp = numpy.loadtxt('pf', usecols=(0,3), unpack=True)
+    index_PT =  numpy.where(Cp == numpy.amax(Cp))
+    print(int(T[index_PT]))
+    return(int(T[index_PT]))
 
 class vertex :
+    T_PT = 9999
     def __init__(vertex, poten):
         vertex.embedding, vertex.interatomic, vertex.density = split_poten(str(poten))
 
@@ -84,6 +92,6 @@ write_poten(vertex_2, 'vertex_2.eam.alloy')
 write_poten(vertex_3, 'vertex_3.eam.alloy')
 
 
-
+print(vertex.embedding)
 #make a class which has a list of the three function values 
 # easier to track that way
