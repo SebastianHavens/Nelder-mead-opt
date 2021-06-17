@@ -6,17 +6,17 @@ import matscipy.calculators.eam.calculator
 
 poten_intro =[]
 
+
 def split_poten(poten):
     values=[]
     lines =[]
-    embedding = []
-    interatomic = []
-    density = []
 
     n=0
     with open(str(poten)) as file:
+        func_interatomic = [] 
+        func_embedding   = []
+        func_density     = []
         for line in file:
-        
             if n < 6 :
                 n += 1
                 poten_intro.append(line)
@@ -26,12 +26,12 @@ def split_poten(poten):
                 values.append(line[c])
     for n in range(len(values)):
             if n < 2000:
-                embedding.append(values[n])
+                func_embedding.append(values[n])
             elif n< 4000:
-                interatomic.append(values[n])
+                func_interatomic.append(values[n])
             else :
-                density.append(values[n])
-    return(embedding, interatomic, density)
+                func_density.append(values[n])
+    return(func_embedding, func_interatomic, func_density)
 
 
 def write_poten(vertex, filename):
@@ -40,20 +40,20 @@ def write_poten(vertex, filename):
     for x in range(len(poten_intro)):
         h_poten.write(poten_intro[x])
 
-    for x in range(len(vertex.embedding)):
+    for x in range(len(embedding[vertex])):
         if (x  % 5) == 0 and x != 0 :
             h_poten.write('\n')
-        h_poten.write(str(vertex.embedding[x]) + ' ')
+        h_poten.write(str(embedding[vertex]) + ' ')
 
-    for x in range(len(vertex.interatomic)):
+    for x in range(len(interatomic[vertex])):
         if (x  % 5) == 0 :
             h_poten.write('\n')
-        h_poten.write(str(vertex.interatomic[x]) + ' ')
+        h_poten.write(str(interatomic[vertex]) + ' ')
 
-    for x in range(len(vertex.density)):
+    for x in range(len(density[vertex])):
         if (x  % 5) == 0 :
             h_poten.write('\n')
-        h_poten.write(str(vertex.density[x]) + ' ')
+        h_poten.write(str(density[vertex]) + ' ')
     h_poten.close()
 
 def find_peak():
@@ -64,34 +64,23 @@ def find_peak():
     print(int(T[index_PT]))
     return(int(T[index_PT]))
 
-class vertex :
-    T_PT = 9999
-    def __init__(vertex, poten):
-        vertex.embedding, vertex.interatomic, vertex.density = split_poten(str(poten))
+with open('Cu_Zhou04.eam.alloy') as file:
+    n = 0
+    for line in file:
+        if n < 6 :
+            n += 1
+            poten_intro.append(line)
 
 
+orig_embedding, orig_interatomic, orig_density = split_poten('Cu_Zhou04.eam.alloy')
+
+#embedding = np.array([orig_embedding]*4)
+interatomic = np.array([orig_interatomic]*4)
+density = np.array([orig_density]*4)
 
 
-vertex_original = vertex('Cu_Zhou04.eam.alloy')
+potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
 
-
-vertex_0 = copy.deepcopy(vertex_original)
-vertex_1 = copy.deepcopy(vertex_original)
-vertex_2 = copy.deepcopy(vertex_original)
-vertex_3 = copy.deepcopy(vertex_original)
-
-vertex_1.embedding = [float (i) * 1.05 for i in vertex_1.embedding]
-vertex_2.interatomic = [float (i) * 1.05 for i in vertex_2.interatomic]
-vertex_3.density = [float (i) * 1.05 for i in vertex_3.density]
-
-
-#write_poten(vertex_original, 'foo.eam.alloy')
-write_poten(vertex_0, 'vertex_0.eam.alloy')
-write_poten(vertex_1, 'vertex_1.eam.alloy')
-write_poten(vertex_2, 'vertex_2.eam.alloy')
-write_poten(vertex_3, 'vertex_3.eam.alloy')
-
-
-print(vertex.embedding)
-#make a class which has a list of the three function values 
-# easier to track that way
+embedding = np.array([potential[2],]*4)
+interatomic = np.array([potential[4],]*4)
+density =np.array([potential[3],]*4) 
