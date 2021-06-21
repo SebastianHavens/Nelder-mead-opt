@@ -67,7 +67,9 @@ prev_best = find_peak(x_start)
 no_improv = 0
 res = [[x_start, prev_best]]
 
-for i in range(dim):
+#for i in range(dim):
+i=0
+while i < len(dim)
     x = copy.copy(x_start)
     x[i] = x[i] + step
     save_variables()
@@ -75,6 +77,7 @@ for i in range(dim):
     load_variables()
     score = find_peak(x)
     res.append([x, score])
+    i += 1
 
 # simplex iter
 iters = 0
@@ -147,13 +150,21 @@ while 1:
     # reduction
     x1 = res[0][0]
     nres = []
-    for tup in res:
+
+    print('got to reduction, cant restart in a for loop')
+    print('res:')
+    print(res)
+    exit()
+    #for tup in res:
+    i=0
+    while i < len(res):
         redx = x1 + sigma*(tup[0] - x1)
         save_variables()
         gen_poten(redx)
         load_variables()
         score = find_peak(redx)
         nres.append([redx, score])
+        i += 1
     res = nres
 
 
