@@ -3,7 +3,8 @@
 import numpy as np
 import copy
 import matscipy.calculators.eam.calculator
-
+import shelve
+import os
 
 def find_peak():
     os.system('gen-ns')
@@ -11,99 +12,164 @@ def find_peak():
     T,Cp = numpy.loadtxt('pf', usecols=(0,3), unpack=True)
     index_PT =  numpy.where(Cp == numpy.amax(Cp))
     print(int(T[index_PT]))
-    return(int(T[index_PT]))
+    return(experimental - int(T[index_PT]))
 
+def gen_poten(param):
+    potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
+    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]), (potential[3] * param[1]), (potential[4] *  param[2]), 'test.eam.alloy','eam/alloy')
 
+def save_variables():
+    cwd = os.getcwd()
+    filename= str(cwd) + '/variables'
+    shelf = shelve.open(filename, 'n')
+    for key in globals():
+        try:
+            shelf[key] = globals()[key]
+        except:
+            print('ERROR shleving: {0}'.format(key))
+    shelf.close()
 
-#orig_embedding, orig_interatomic, orig_density = split_poten('Cu_Zhou04.eam.alloy')
+def load_variables():
+    cwd = os.(getcwd)
+    shelf = shelf.open(str(cwd +'/variables'))
+    for key in shelf:
+        globals()[key] = shelf[key]
+    shelf.close
 
-#embedding = np.array([orig_embedding]*4)
-#interatomic = np.array([orig_interatomic]*4)
-#density = np.array([orig_density]*4)
-
-# [0] source
-# [1] parameters
-# [2] embedded
-# [3] density
-# [4] pair potential
-
-
-potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
-
-embedding = np.array([potential[2],]* 4)
-interatomic = np.array([potential[4],]*4)
-density =np.array([potential[3],]*4) 
-
-embedding[1] = embedding[1] * 1.05
-interatomic[2] = interatomic[2] * 1.05
-density[3] = density[3] * 1.05
-
-
-
-matscipy.calculators.eam.io.write_eam(potential[0], potential[1], embedding[1], density[1], interatomic[1], 'embedded.eam.alloy','eam/alloy')
-matscipy.calculators.eam.io.write_eam(potential[0], potential[1], embedding[2], density[2], interatomic[2], 'interatomic.eam.alloy','eam/alloy')
-matscipy.calculators.eam.io.write_eam(potential[0], potential[1], embedding[3], density[3], interatomic[3], 'density.eam.alloy','eam/alloy')
-
-
-
-#matscipy.calculators.eam.io.write_eam(potential[0], potential[1], potential[2], potential[3], potential[4], 'scii', kind='eam/alloy')
+# Read in and modify initial potential, write new potential files
 
 
 
 
+#Perform nested sampling optimisation, we want to minimise score which is the difference of PT from experimental value.
 
 
-#def split_poten(poten):
-#    values=[]
-#    lines =[]
-#
-#    n=0
-#    with open(str(poten)) as file:
-#        func_interatomic = [] 
-#        func_embedding   = []
-#        func_density     = []
-#        for line in file:
-#            if n < 6 :
-#                n += 1
-#                poten_intro.append(line)
-#                continue
-#            line=line.split()
-#            for c in range(len(line)):
-#                values.append(line[c])
-#    for n in range(len(values)):
-#            if n < 2000:
-#                func_embedding.append(values[n])
-#            elif n< 4000:
-#                func_interatomic.append(values[n])
-#            else :
-#                func_density.append(values[n])
-#    return(func_embedding, func_interatomic, func_density)
+step = 0.05
+no_improv_thr = 10e-6
+n_improv_break= 10
+max_iter = 1
+alpha = 1.
+gamma = 2.
+rho = -0.5
+sigma = 0.5
 
-#def write_poten(vertex, filename):
-#    h_poten = open(str(filename), 'w')
-#   
-#    for x in range(len(poten_intro)):
-#        h_poten.write(poten_intro[x])
-#
-#    for x in range(len(embedding[vertex])):
-#        if (x  % 5) == 0 and x != 0 :
-#            h_poten.write('\n')
-#        h_poten.write(str(embedding[vertex]) + ' ')
-#
-#    for x in range(len(interatomic[vertex])):
-#        if (x  % 5) == 0 :
-#            h_poten.write('\n')
-#        h_poten.write(str(interatomic[vertex]) + ' ')
-#
-#    for x in range(len(density[vertex])):
-#        if (x  % 5) == 0 :
-#            h_poten.write('\n')
-#        h_poten.write(str(density[vertex]) + ' ')
-#    h_poten.close()
+#my vars
 
-#with open('Cu_Zhou04.eam.alloy') as file:
-#    n = 0
-#    for line in file:
-#        if n < 6 :
-#            n += 1
-#            poten_intro.append(line)
+x_start = np.array([1.0, 1.0, 1.0])
+experimental = 1400
+
+# init
+dim = len(x_start)
+save_variables()
+gen_poten(x_start)
+load_variables()
+prev_best = find_peak(x_start)
+no_improv = 0
+res = [[x_start, prev_best]]
+
+for i in range(dim):
+    x = copy.copy(x_start)
+    x[i] = x[i] + step
+    save_variables()
+    gen_poten(x)
+    load_variables()
+    score = find_peak(x)
+    res.append([x, score])
+
+# simplex iter
+iters = 0
+while 1:
+    # order
+    res.sort(key=lambda x: x[1])
+    best = res[0][1]
+
+    # break after max_iter
+    if max_iter and iters >= max_iter:
+        return res[0]
+    iters += 1
+
+    # break after no_improv_break iterations with no improvement
+    print '...best so far:', best
+
+    if best < prev_best - no_improve_thr:
+        no_improv = 0
+        prev_best = best
+    else:
+        no_improv += 1
+
+    if no_improv >= no_improv_break:
+        return res[0]
+
+    # centroid
+    x0 = [0.] * dim
+    for tup in res[:-1]:
+        for i, c in enumerate(tup[0]):
+            x0[i] += c / (len(res)-1)
+
+    # reflection
+    xr = x0 + alpha*(x0 - res[-1][0])
+    save_variables()
+    gen_poten(xr)
+    load_variables()
+    rscore = find_peak(xr)
+    if res[0][1] <= rscore < res[-2][1]:
+        del res[-1]
+        res.append([xr, rscore])
+        continue
+
+    # expansion
+    if rscore < res[0][1]:
+        xe = x0 + gamma*(x0 - res[-1][0])
+        save_variables()
+        gen_poten(xe)
+        load_variables()
+        escore = find_peak(xe)
+        if escore < rscore:
+            del res[-1]
+            res.append([xe, escore])
+            continue
+        else:
+            del res[-1]
+            res.append([xr, rscore])
+            continue
+
+    # contraction
+    xc = x0 + rho*(x0 - res[-1][0])
+    save_variables()
+    gen_poten(xc)
+    load_variables()
+    cscore = find_peak(xc)
+    if cscore < res[-1][1]:
+        del res[-1]
+        res.append([xc, cscore])
+        continue
+
+    # reduction
+    x1 = res[0][0]
+    nres = []
+    for tup in res:
+        redx = x1 + sigma*(tup[0] - x1)
+        save_variables()
+        gen_poten(redx)
+        load_variables()
+        score = find_peak(redx)
+        nres.append([redx, score])
+    res = nres
+
+
+
+
+
+
+#def reload_variables():
+#    variables = np.load('variables.npz')
+#    res =       variables['res']
+#    best =      variables['best']
+#    iters =     variables['iters']
+#    no_improv = variables['no_improv']
+#    dim =       variables['dim']
+#    x0 =        variables['x0'] 
+#    xr =        variables['xr']
+#    rscore =    variables['rscore']
+#def save_variables():
+#    np.savez('variables', res=res, best=best, iters=iters, no_improv=no_improv, dim=dim, x0=x0, xr=xr, rscore=rscore, xe=xe)
