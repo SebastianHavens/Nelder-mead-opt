@@ -59,6 +59,7 @@ x_start = np.array([1.0, 1.0, 1.0])
 experimental = 1400
 
 # init
+stage = 0
 dim = len(x_start)
 save_variables()
 gen_poten(x_start)
@@ -68,6 +69,7 @@ no_improv = 0
 res = [[x_start, prev_best]]
 
 #for i in range(dim):
+stage = 1
 i=0
 while i < len(dim)
     x = copy.copy(x_start)
@@ -110,6 +112,7 @@ while 1:
             x0[i] += c / (len(res)-1)
 
     # reflection
+    stage = 2 
     xr = x0 + alpha*(x0 - res[-1][0])
     save_variables()
     gen_poten(xr)
@@ -121,6 +124,7 @@ while 1:
         continue
 
     # expansion
+    stage = 3
     if rscore < res[0][1]:
         xe = x0 + gamma*(x0 - res[-1][0])
         save_variables()
@@ -137,6 +141,7 @@ while 1:
             continue
 
     # contraction
+    stage = 4
     xc = x0 + rho*(x0 - res[-1][0])
     save_variables()
     gen_poten(xc)
@@ -151,13 +156,9 @@ while 1:
     x1 = res[0][0]
     nres = []
 
-    print('got to reduction, cant restart in a for loop')
-    print('res:')
-    print(res)
-    exit()
     #for tup in res:
     i=0
-    while i < len(res):
+    while i < len(res): # might be a bug here from the loop type change, check
         redx = x1 + sigma*(tup[0] - x1)
         save_variables()
         gen_poten(redx)
