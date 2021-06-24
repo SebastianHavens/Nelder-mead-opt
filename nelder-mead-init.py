@@ -5,15 +5,12 @@ import copy
 import matscipy.calculators.eam.calculator
 import shelve
 import os
-import subprocess 
 import sys
 import shutil
 from shutil import copyfile
-import mpi4py
-
 # Returns absolute value of distance from experimental value
 def find_peak():
-    subprocess.check_call('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
+    os.system('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
     T,Cp = numpy.loadtxt('pf', usecols=(0,3), unpack=True)
     index_PT =  numpy.where(Cp == numpy.amax(Cp))
     print(int(T[index_PT]))
@@ -48,7 +45,7 @@ def call_ns_run(param):
     subprocess.check_call('gen-ns', shell = False) 
     gen_poten(param)
     print('Calling ns')
-    subprocess.check_call(['./ns_run', '< 32Cu.input'], shell = True) 
+    os.system('./ns_run < 32Cu.input')
     print('NS finished')
     score = find_peak()
     os.chdir('cd ../')
@@ -61,9 +58,9 @@ call_ns_run.counter = 0
 
 
 step = 0.05
-no_improv_thr = 10e-6
-n_improv_break= 10
-max_iter = 1
+no_improv_thr = 20
+n_improv_break= 3
+max_iter = 15
 alpha = 1.
 gamma = 2.
 rho = -0.5
@@ -103,7 +100,12 @@ while 1:
 
     # break after no_improv_break iterations with no improvement
     print( '...best so far:', str(best))
+    h_best = open('track_best', 'a')
+    h_best.write('best so far:' + str(res[0]) + '\n')
+    h_best.close()
 
+    h_track = open('track', 'a')
+    h_track.write(str(iters) + ': \n' + str(res))
     if best < prev_best - no_improve_thr:
         no_improv = 0
         prev_best = best
