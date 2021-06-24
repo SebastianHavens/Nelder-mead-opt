@@ -10,7 +10,11 @@ import shutil
 from shutil import copyfile
 # Returns absolute value of distance from experimental value
 def find_peak():
-    os.system('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
+    try:
+        os.system('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
+    except:
+        print('Error calling ns_analyse')
+        exit()
     T,Cp = numpy.loadtxt('pf', usecols=(0,3), unpack=True)
     index_PT =  numpy.where(Cp == numpy.amax(Cp))
     print(int(T[index_PT]))
@@ -25,10 +29,18 @@ def gen_poten(param):
 def call_ns_run(param):
     shutil.copytree('run', str(call_ns_run.counter))
     os.chdir(str(call_ns_run.counter))
-    subprocess.check_call('gen-ns', shell = False) 
+    try:
+        subprocess.check_call('gen-ns', shell = False) 
+    except:
+        print('Error Calling gen-ns')
+        exit()
     gen_poten(param)
     print('Calling ns')
-    os.system('./ns_run < 32Cu.input')
+    try:
+        os.system('./ns_run < 32Cu.input')
+    except:
+        print('Error calling ns_run')
+        exit()
     print('NS finished')
     score = find_peak()
     os.chdir('cd ../')
