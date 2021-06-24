@@ -21,23 +21,6 @@ def gen_poten(param):
     potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
     matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]), (potential[3] * param[1]), (potential[4] *  param[2]), 'test.eam.alloy','eam/alloy')
 
-def save_variables():
-    cwd = os.getcwd()
-    filename= str(cwd) + '/variables'
-    shelf = shelve.open(filename, 'n')
-    for key in globals():
-        try:
-            shelf[key] = globals()[key]
-        except:
-            print('ERROR shleving: {0}'.format(key))
-    shelf.close()
-
-def load_variables():
-    cwd = os.getcwd()
-    shelf = shelf.open(str(cwd +'/variables'))
-    for key in shelf:
-        globals()[key] = shelf[key]
-    shelf.close
 
 def call_ns_run(param):
     shutil.copytree('run', str(call_ns_run.counter))
