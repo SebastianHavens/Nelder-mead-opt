@@ -1,0 +1,19 @@
+#!/bin/bash
+
+
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=20
+#SBATCH --time=24:00:00
+#SBATCH --partition=standard
+#SBATCH --qos=standard
+
+#SBATCH --account=ec127
+
+#module load /lustre/sw/modulefiles/epcc/setup-env
+
+module load openmpi/4.0.3
+module load gcc/8.2.0
+export OMP_NUM_THREADS=1
+
+./nelder_mead.py > out

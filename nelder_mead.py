@@ -5,49 +5,64 @@ import copy
 import matscipy.calculators.eam.calculator
 import shelve
 import os
-
+import sys
+import shutil
+from shutil import copyfile
+import time
+# Returns absolute value of distance from experimental value
 def find_peak():
-    os.system('gen-ns')
-    os.system('./ns_analyse 64Cu.energies -M 0 -n 600 -D 5 > pf')
+    try:
+        os.system('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
+    except:
+        print('Error calling ns_analyse')
+        exit()
     T,Cp = numpy.loadtxt('pf', usecols=(0,3), unpack=True)
     index_PT =  numpy.where(Cp == numpy.amax(Cp))
     print(int(T[index_PT]))
-    return(experimental - int(T[index_PT]))
+    return(abs(experimental - int(T[index_PT])))
 
+#Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
 def gen_poten(param):
     potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
     matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]), (potential[3] * param[1]), (potential[4] *  param[2]), 'test.eam.alloy','eam/alloy')
 
-def save_variables():
-    cwd = os.getcwd()
-    filename= str(cwd) + '/variables'
-    shelf = shelve.open(filename, 'n')
-    for key in globals():
-        try:
-            shelf[key] = globals()[key]
-        except:
-            print('ERROR shleving: {0}'.format(key))
-    shelf.close()
 
-def load_variables():
-    cwd = os.(getcwd)
-    shelf = shelf.open(str(cwd +'/variables'))
-    for key in shelf:
-        globals()[key] = shelf[key]
-    shelf.close
+def call_ns_run(param):
+    shutil.copytree('run', str(call_ns_run.counter))
+    os.chdir(str(call_ns_run.counter))
+    try:
+        subprocess.check_call('gen-ns', shell = False) 
+    except:
+        print('Error Calling gen-ns')
+        exit()
+    gen_poten(param)
+    print('Calling ns')
+    time = time.time()
+    try:
+        os.system('srun ./ns_run < 32Cu.input')
+    except:
+        print('Error calling ns_run')
+        exit()
+    print('NS finished')
+    time = (time.time() - time) / 3600
+    h_time = open('times', 'a')
+    h_time.write(time)
+    h_time.close()
 
-# Read in and modify initial potential, write new potential files
+    score = find_peak()
+    os.chdir('cd ../')
+    call_ns_run.counter += 1
+    return score 
 
 
-
-
+call_ns_run.counter = 0
 #Perform nested sampling optimisation, we want to minimise score which is the difference of PT from experimental value.
 
 
 step = 0.05
-no_improv_thr = 10e-6
-n_improv_break= 10
-max_iter = 1
+no_improv_thr = 20
+n_improv_break= 3
+max_iter = 15
 alpha = 1.
 gamma = 2.
 rho = -0.5
@@ -59,27 +74,17 @@ x_start = np.array([1.0, 1.0, 1.0])
 experimental = 1400
 
 # init
-stage = 0
 dim = len(x_start)
-save_variables()
-gen_poten(x_start)
-load_variables()
-prev_best = find_peak(x_start)
+prev_best = call_ns_run(x_start)
 no_improv = 0
 res = [[x_start, prev_best]]
 
-#for i in range(dim):
-stage = 1
-i=0
-while i < len(dim)
+for i in  range(dim):
     x = copy.copy(x_start)
     x[i] = x[i] + step
-    save_variables()
     gen_poten(x)
-    load_variables()
-    score = find_peak(x)
+    score = call_ns_run(x)
     res.append([x, score])
-    i += 1
 
 # simplex iter
 iters = 0
@@ -90,12 +95,19 @@ while 1:
 
     # break after max_iter
     if max_iter and iters >= max_iter:
-        return res[0]
+        print('Reached max number of iterations')
+        print( res[0])
+        exit()
     iters += 1
 
     # break after no_improv_break iterations with no improvement
-    print '...best so far:', best
+    print( '...best so far:', str(best))
+    h_best = open('track_best', 'a')
+    h_best.write('best so far:' + str(res[0]) + '\n')
+    h_best.close()
 
+    h_track = open('track', 'a')
+    h_track.write(str(iters) + ': \n' + str(res))
     if best < prev_best - no_improve_thr:
         no_improv = 0
         prev_best = best
@@ -103,7 +115,9 @@ while 1:
         no_improv += 1
 
     if no_improv >= no_improv_break:
-        return res[0]
+        print('Reached max number of iterations without a significant improvement')
+        print(res[0])
+        exit()
 
     # centroid
     x0 = [0.] * dim
@@ -112,25 +126,19 @@ while 1:
             x0[i] += c / (len(res)-1)
 
     # reflection
-    stage = 2 
     xr = x0 + alpha*(x0 - res[-1][0])
-    save_variables()
     gen_poten(xr)
-    load_variables()
-    rscore = find_peak(xr)
+    rscore = call_ns_run(xr)
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
         res.append([xr, rscore])
         continue
 
     # expansion
-    stage = 3
     if rscore < res[0][1]:
         xe = x0 + gamma*(x0 - res[-1][0])
-        save_variables()
         gen_poten(xe)
-        load_variables()
-        escore = find_peak(xe)
+        escore = call_ns_run(xe)
         if escore < rscore:
             del res[-1]
             res.append([xe, escore])
@@ -141,12 +149,9 @@ while 1:
             continue
 
     # contraction
-    stage = 4
     xc = x0 + rho*(x0 - res[-1][0])
-    save_variables()
     gen_poten(xc)
-    load_variables()
-    cscore = find_peak(xc)
+    cscore = call_ns_run(xc)
     if cscore < res[-1][1]:
         del res[-1]
         res.append([xc, cscore])
@@ -157,15 +162,11 @@ while 1:
     nres = []
 
     #for tup in res:
-    i=0
-    while i < len(res): # might be a bug here from the loop type change, check
+    for tup in res: # might be a bug here from the loop type change, check
         redx = x1 + sigma*(tup[0] - x1)
-        save_variables()
         gen_poten(redx)
-        load_variables()
-        score = find_peak(redx)
+        score = call_ns_run(redx)
         nres.append([redx, score])
-        i += 1
     res = nres
 
 
@@ -173,15 +174,3 @@ while 1:
 
 
 
-#def reload_variables():
-#    variables = np.load('variables.npz')
-#    res =       variables['res']
-#    best =      variables['best']
-#    iters =     variables['iters']
-#    no_improv = variables['no_improv']
-#    dim =       variables['dim']
-#    x0 =        variables['x0'] 
-#    xr =        variables['xr']
-#    rscore =    variables['rscore']
-#def save_variables():
-#    np.savez('variables', res=res, best=best, iters=iters, no_improv=no_improv, dim=dim, x0=x0, xr=xr, rscore=rscore, xe=xe)
