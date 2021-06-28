@@ -44,7 +44,7 @@ LAMMPS_name=mpi
 
 LAMMPS_init_cmds=pair_style eam/fs; pair_coeff * * test.eam.alloy Cu
 LAMMPS_atom_types=Cu 1
-LAMMPS_serial=t
+LAMMPS_serial=f
 
 rng=numpy
 

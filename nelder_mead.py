@@ -9,6 +9,8 @@ import sys
 import shutil
 from shutil import copyfile
 import time
+
+
 # Returns absolute value of distance from experimental value
 def find_peak():
     try:
@@ -26,7 +28,7 @@ def gen_poten(param):
     potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
     matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]), (potential[3] * param[1]), (potential[4] *  param[2]), 'test.eam.alloy','eam/alloy')
 
-
+# Starts nested sampling calculation
 def call_ns_run(param):
     shutil.copytree('run', str(call_ns_run.counter))
     os.chdir(str(call_ns_run.counter))
@@ -56,9 +58,8 @@ def call_ns_run(param):
 
 
 call_ns_run.counter = 0
-#Perform nested sampling optimisation, we want to minimise score which is the difference of PT from experimental value.
 
-
+# NM parameters
 step = 0.05
 no_improv_thr = 20
 n_improv_break= 3
@@ -68,10 +69,15 @@ gamma = 2.
 rho = -0.5
 sigma = 0.5
 
-#my vars
-
+# Starting parameters
 x_start = np.array([1.0, 1.0, 1.0])
 experimental = 1400
+
+# Progress file
+h_progress = open('progress', 'a')
+h_progress.write('NS count:  Stage:  Parameters:   Score:')
+
+
 
 # init
 dim = len(x_start)
@@ -84,6 +90,7 @@ for i in  range(dim):
     x[i] = x[i] + step
     gen_poten(x)
     score = call_ns_run(x)
+    h_progress.write(str(call_ns_run.counter), 'Init', str(x), str(score))
     res.append([x, score])
 
 # simplex iter
@@ -129,6 +136,7 @@ while 1:
     xr = x0 + alpha*(x0 - res[-1][0])
     gen_poten(xr)
     rscore = call_ns_run(xr)
+    h_progress.write(str(call_ns_run.counter), 'Reflection', str(xr), str(score))
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
         res.append([xr, rscore])
@@ -139,6 +147,7 @@ while 1:
         xe = x0 + gamma*(x0 - res[-1][0])
         gen_poten(xe)
         escore = call_ns_run(xe)
+        h_progress.write(str(call_ns_run.counter), 'Expansion', str(xe), str(score))
         if escore < rscore:
             del res[-1]
             res.append([xe, escore])
@@ -152,6 +161,7 @@ while 1:
     xc = x0 + rho*(x0 - res[-1][0])
     gen_poten(xc)
     cscore = call_ns_run(xc)
+    h_progress.write(str(call_ns_run.counter), 'Contraction', str(xc), str(score))
     if cscore < res[-1][1]:
         del res[-1]
         res.append([xc, cscore])
@@ -166,6 +176,7 @@ while 1:
         redx = x1 + sigma*(tup[0] - x1)
         gen_poten(redx)
         score = call_ns_run(redx)
+        h_progress.write(str(call_ns_run.counter), 'Reduction', str(redx), str(score))
         nres.append([redx, score])
     res = nres
 
