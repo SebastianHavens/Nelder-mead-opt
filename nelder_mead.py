@@ -37,7 +37,7 @@ def call_ns_run(param):
     gen_poten(param)
     print('Calling ns')
     try:
-        os.system('./ns_run < 32Cu.input')
+        os.system('srun ./ns_run < 32Cu.input')
     except:
         print('Error calling ns_run')
         exit()

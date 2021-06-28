@@ -2,7 +2,7 @@
 max_volume_per_atom=1000
 
 # 64 atoms with atomic number 1, let mass default to 1.0
-start_species=29 32
+start_species=29 16
 start_energy_ceiling_per_atom=1.5
 
 # size of live set
@@ -17,7 +17,7 @@ out_file_prefix=32Cu
 
 # use MD generating a new walker
 atom_algorithm=MD
-n_model_calls_expected=1000      
+n_model_calls_expected=1000
 n_atom_steps=5                
 # length of atomic trajectory in each step
 atom_traj_len=10               
@@ -52,4 +52,4 @@ rng=numpy
 debug=0
 
 snapshot_interval=2000
-traj_interval=100 
+traj_interval=1000

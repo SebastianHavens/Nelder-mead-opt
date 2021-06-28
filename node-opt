@@ -16,4 +16,4 @@ module load openmpi/4.0.3
 module load gcc/8.2.0
 export OMP_NUM_THREADS=1
 
-srun ./nelder_mead.py < 32Cu.input >> 32Cu.out 
+./nelder_mead.py > out
