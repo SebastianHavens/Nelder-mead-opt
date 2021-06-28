@@ -37,16 +37,16 @@ def call_ns_run(param):
         exit()
     gen_poten(param)
     print('Calling ns')
-    time = time.time()
+    runtime = time.time()
     try:
         os.system('srun ./ns_run < 32Cu.input')
     except:
         print('Error calling ns_run')
         exit()
     print('NS finished')
-    time = (time.time() - time) / 3600
+    runtime = (time.time() - runtime) / 3600
     h_time = open('times', 'a')
-    h_time.write(time)
+    h_time.write(str(runtime))
     h_time.close()
 
     score = find_peak()
