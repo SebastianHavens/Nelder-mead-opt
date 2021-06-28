@@ -8,6 +8,7 @@ import os
 import sys
 import shutil
 from shutil import copyfile
+import time
 # Returns absolute value of distance from experimental value
 def find_peak():
     try:
@@ -36,12 +37,18 @@ def call_ns_run(param):
         exit()
     gen_poten(param)
     print('Calling ns')
+    time = time.time()
     try:
         os.system('srun ./ns_run < 32Cu.input')
     except:
         print('Error calling ns_run')
         exit()
     print('NS finished')
+    time = (time.time() - time) / 3600
+    h_time = open('times', 'a')
+    h_time.write(time)
+    h_time.close()
+
     score = find_peak()
     os.chdir('cd ../')
     call_ns_run.counter += 1
