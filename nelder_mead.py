@@ -31,7 +31,7 @@ def call_ns_run(param):
     shutil.copytree('run', str(call_ns_run.counter))
     os.chdir(str(call_ns_run.counter))
     try:
-        subprocess.check_call('gen-ns', shell = False) 
+        os.system('gen-ns', shell = False) 
     except:
         print('Error Calling gen-ns')
         exit()
