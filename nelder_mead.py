@@ -88,7 +88,6 @@ res = [[x_start, prev_best]]
 for i in  range(dim):
     x = copy.copy(x_start)
     x[i] = x[i] + step
-    gen_poten(x)
     score = call_ns_run(x)
     h_progress.write(str(call_ns_run.counter), 'Init', str(x), str(score))
     res.append([x, score])
@@ -134,7 +133,6 @@ while 1:
 
     # reflection
     xr = x0 + alpha*(x0 - res[-1][0])
-    gen_poten(xr)
     rscore = call_ns_run(xr)
     h_progress.write(str(call_ns_run.counter), 'Reflection', str(xr), str(score))
     if res[0][1] <= rscore < res[-2][1]:
@@ -145,7 +143,6 @@ while 1:
     # expansion
     if rscore < res[0][1]:
         xe = x0 + gamma*(x0 - res[-1][0])
-        gen_poten(xe)
         escore = call_ns_run(xe)
         h_progress.write(str(call_ns_run.counter), 'Expansion', str(xe), str(score))
         if escore < rscore:
@@ -159,7 +156,6 @@ while 1:
 
     # contraction
     xc = x0 + rho*(x0 - res[-1][0])
-    gen_poten(xc)
     cscore = call_ns_run(xc)
     h_progress.write(str(call_ns_run.counter), 'Contraction', str(xc), str(score))
     if cscore < res[-1][1]:
@@ -174,7 +170,6 @@ while 1:
     #for tup in res:
     for tup in res: # might be a bug here from the loop type change, check
         redx = x1 + sigma*(tup[0] - x1)
-        gen_poten(redx)
         score = call_ns_run(redx)
         h_progress.write(str(call_ns_run.counter), 'Reduction', str(redx), str(score))
         nres.append([redx, score])
