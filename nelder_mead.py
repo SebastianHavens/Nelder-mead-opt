@@ -30,10 +30,12 @@ def gen_poten(param):
 
 # Starts nested sampling calculation
 def call_ns_run(param):
-    shutil.copytree('run', str(call_ns_run.counter))
+    # See if folder exists already, if it does we've restarted and we want to restart the ns calculation
+    if not os.path.isdir(str(call_ns_run.counter)) :
+        shutil.copytree('run', str(call_ns_run.counter))
     os.chdir(str(call_ns_run.counter))
     try:
-        os.system('gen-ns') 
+        os.system('gen-ns') # will this cause an exception if the links exist?
     except:
         print('Error Calling gen-ns')
         exit()
@@ -74,6 +76,15 @@ def save_variables():
             print('ERROR shleving: {0}'.format(key))
     shelf.close()
 
+opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
+if "-r" in opts:
+    print('Restarting NM calculation')
+    restart = True
+
+
+
+
+
 # NM parameters
 step = 0.05
 no_improv_thr = 20
@@ -99,6 +110,8 @@ if restart .eq. True :
         if res[0][1] <= rscore < res[-2][1]:
             del res[-1]
             res.append([xr, rscore])
+        else :
+            stage = 1
 
     # expansion
     if stage == 1 :
@@ -112,6 +125,8 @@ if restart .eq. True :
             else:
                 del res[-1]
                 res.append([xr, rscore])
+        else :
+            stage = 2
 
     # contraction
     if stage ==2:
@@ -121,6 +136,9 @@ if restart .eq. True :
         if cscore < res[-1][1]:
             del res[-1]
             res.append([xc, cscore])
+        else : 
+            stage = 3
+
 
     # reduction
     if stage == 3 : 
