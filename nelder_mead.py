@@ -52,7 +52,7 @@ def call_ns_run(param):
     h_time.close()
 
     score = find_peak()
-    os.chdir('cd ../')
+    os.chdir('../')
     call_ns_run.counter += 1
     return score 
 
