@@ -102,11 +102,12 @@ experimental = 1400
 
 if restart .eq. True :
     load_variables()    
+    h_progress = open('progress', 'a')
     # reflection
     if stage == 0 :
         xr = x0 + alpha*(x0 - res[-1][0])
         rscore = call_ns_run(xr)
-        h_progress.write(str(call_ns_run.counter), 'Reflection', str(xr), str(score))
+        h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(score) + '\n')
         if res[0][1] <= rscore < res[-2][1]:
             del res[-1]
             res.append([xr, rscore])
@@ -118,7 +119,7 @@ if restart .eq. True :
         if rscore < res[0][1]:
             xe = x0 + gamma*(x0 - res[-1][0])
             escore = call_ns_run(xe)
-            h_progress.write(str(call_ns_run.counter), 'Expansion', str(xe), str(score))
+            h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(score) + '\n')
             if escore < rscore:
                 del res[-1]
                 res.append([xe, escore])
@@ -132,7 +133,7 @@ if restart .eq. True :
     if stage ==2:
         xc = x0 + rho*(x0 - res[-1][0])
         cscore = call_ns_run(xc)
-        h_progress.write(str(call_ns_run.counter), 'Contraction', str(xc), str(score))
+        h_progress.write(str(call_ns_run.counter) + ' Contraction ' + str(xc) +  ' ' + str(score) + '\n')
         if cscore < res[-1][1]:
             del res[-1]
             res.append([xc, cscore])
@@ -149,7 +150,7 @@ if restart .eq. True :
         for tup in res: # might be a bug here from the loop type change, check
             redx = x1 + sigma*(tup[0] - x1)
             score = call_ns_run(redx)
-            h_progress.write(str(call_ns_run.counter), 'Reduction', str(redx), str(score))
+            h_progress.write(str(call_ns_run.counter) + ' Reduction ' + str(redx) +  ' ' + str(score) + '\n')
             nres.append([redx, score])
         res = nres
 
@@ -170,7 +171,7 @@ if restart = False :
         x = copy.copy(x_start)
         x[i] = x[i] + step
         score = call_ns_run(x)
-        h_progress.write(str(call_ns_run.counter), 'Init', str(x), str(score))
+        h_progress.write(str(call_ns_run.counter) + ' Init ' + str(x) +  ' ' + str(score) + '\n')
         res.append([x, score])
 
 # simplex iter
@@ -189,11 +190,12 @@ while 1:
     # break after no_improv_break iterations with no improvement
     print( '...best so far:', str(best))
     h_best = open('track_best', 'a')
-    h_best.write('best so far:' + str(res[0]) + '\n')
+    h_best.write('best so far: ' + str(res[0]) + '\n')
     h_best.close()
 
     h_track = open('track', 'a')
-    h_track.write(str(iters) + ': \n' + str(res))
+    h_track.write(str(iters) + ': ' + str(res) + '\n')
+    h_track.close()
     if best < prev_best - no_improve_thr:
         no_improv = 0
         prev_best = best
@@ -216,7 +218,7 @@ while 1:
     save_variables()
     xr = x0 + alpha*(x0 - res[-1][0])
     rscore = call_ns_run(xr)
-    h_progress.write(str(call_ns_run.counter), 'Reflection', str(xr), str(score))
+    h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(score) + '\n')
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
         res.append([xr, rscore])
@@ -228,7 +230,7 @@ while 1:
         save_variables()
         xe = x0 + gamma*(x0 - res[-1][0])
         escore = call_ns_run(xe)
-        h_progress.write(str(call_ns_run.counter), 'Expansion', str(xe), str(score))
+        h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(score) + '\n')
         if escore < rscore:
             del res[-1]
             res.append([xe, escore])
@@ -243,7 +245,7 @@ while 1:
     save_variables()
     xc = x0 + rho*(x0 - res[-1][0])
     cscore = call_ns_run(xc)
-    h_progress.write(str(call_ns_run.counter), 'Contraction', str(xc), str(score))
+    h_progress.write(str(call_ns_run.counter) + ' Contraction  ' + str(xc) +  ' ' + str(score) + '\n')
     if cscore < res[-1][1]:
         del res[-1]
         res.append([xc, cscore])
@@ -259,7 +261,7 @@ while 1:
     for tup in res: # might be a bug here from the loop type change, check
         redx = x1 + sigma*(tup[0] - x1)
         score = call_ns_run(redx)
-        h_progress.write(str(call_ns_run.counter), 'Reduction', str(redx), str(score))
+        h_progress.write(str(call_ns_run.counter) + ' Reduction  ' + str(redx) +  ' ' + str(score) + '\n')
         nres.append([redx, score])
     res = nres
 
