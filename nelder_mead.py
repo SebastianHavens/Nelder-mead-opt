@@ -9,7 +9,7 @@ import sys
 import shutil
 from shutil import copyfile
 import time
-import shelf
+import shelve
 
 # Returns absolute value of distance from experimental value
 def find_peak():
