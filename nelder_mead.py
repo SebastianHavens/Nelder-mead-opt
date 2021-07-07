@@ -35,7 +35,7 @@ def call_ns_run(param):
         shutil.copytree('run', str(call_ns_run.counter))
     os.chdir(str(call_ns_run.counter))
     try:
-        os.system('gen-ns') # will this cause an exception if the links exist?
+        os.system('gen-ns') 
     except:
         print('Error Calling gen-ns')
         exit()
@@ -80,6 +80,9 @@ opts = [opt for opt in sys.argv[1:] if opt.startswith("-")]
 if "-r" in opts:
     print('Restarting NM calculation')
     restart = True
+else:
+    restart = False
+    
 
 
 
