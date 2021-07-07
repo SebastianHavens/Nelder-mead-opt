@@ -59,7 +59,7 @@ def call_ns_run(param):
     return score 
 
 def load_variables():
-    cwd = os.(getcwd)
+    cwd = os.getcwd()
     shelf = shelf.open(str(cwd +'/variables'))
     for key in shelf:
         globals()[key] = shelf[key]
@@ -103,7 +103,7 @@ x_start = np.array([1.0, 1.0, 1.0])
 experimental = 1400
 
 
-if restart .eq. True :
+if restart == True :
     load_variables()    
     h_progress = open('progress', 'a')
     # reflection
@@ -159,7 +159,7 @@ if restart .eq. True :
 
 
 # Progress file
-if restart = False :
+if restart == False :
     call_ns_run.counter = 0
     h_progress = open('progress', 'a')
     h_progress.write('NS count:  Stage:  Parameters:   Score:')
