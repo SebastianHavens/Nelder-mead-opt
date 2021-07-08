@@ -14,7 +14,7 @@ import shelve
 # Returns absolute value of distance from experimental value
 def find_peak():
     try:
-        os.system('./ns_analyse 32Cu.energies -M 0 -n 600 -D 5 > pf')
+        os.system('./ns_analyse 32Cu.energies -M 1 -n 1000 -D 5 > pf')
     except:
         print('Error calling ns_analyse')
         exit()
