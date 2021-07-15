@@ -18,7 +18,7 @@ def find_peak():
     except:
         print('Error calling ns_analyse')
         exit()
-    T,Cp = np.loadtxt('pf', usecols=(0,3), unpack=True)
+    T,Cp = np.loadtxt('pf', usecols=(0,4), unpack=True)
     index_PT =  np.where(Cp == np.amax(Cp))
     print(int(T[index_PT]))
     return(abs(experimental - int(T[index_PT])))
