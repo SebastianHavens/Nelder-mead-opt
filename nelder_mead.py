@@ -110,7 +110,7 @@ if restart == True :
     if stage == 0 :
         xr = x0 + alpha*(x0 - res[-1][0])
         rscore = call_ns_run(xr)
-        h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(score) + '\n')
+        h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(rscore) + '\n')
         if res[0][1] <= rscore < res[-2][1]:
             del res[-1]
             res.append([xr, rscore])
@@ -122,7 +122,7 @@ if restart == True :
         if rscore < res[0][1]:
             xe = x0 + gamma*(x0 - res[-1][0])
             escore = call_ns_run(xe)
-            h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(score) + '\n')
+            h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(escore) + '\n')
             if escore < rscore:
                 del res[-1]
                 res.append([xe, escore])
@@ -136,7 +136,7 @@ if restart == True :
     if stage ==2:
         xc = x0 + rho*(x0 - res[-1][0])
         cscore = call_ns_run(xc)
-        h_progress.write(str(call_ns_run.counter) + ' Contraction ' + str(xc) +  ' ' + str(score) + '\n')
+        h_progress.write(str(call_ns_run.counter) + ' Contraction ' + str(xc) +  ' ' + str(cscore) + '\n')
         if cscore < res[-1][1]:
             del res[-1]
             res.append([xc, cscore])
@@ -221,7 +221,7 @@ while 1:
     save_variables()
     xr = x0 + alpha*(x0 - res[-1][0])
     rscore = call_ns_run(xr)
-    h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(score) + '\n')
+    h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) +  ' ' + str(rscore) + '\n')
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
         res.append([xr, rscore])
@@ -233,7 +233,7 @@ while 1:
         save_variables()
         xe = x0 + gamma*(x0 - res[-1][0])
         escore = call_ns_run(xe)
-        h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(score) + '\n')
+        h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) +  ' ' + str(escore) + '\n')
         if escore < rscore:
             del res[-1]
             res.append([xe, escore])
@@ -248,7 +248,7 @@ while 1:
     save_variables()
     xc = x0 + rho*(x0 - res[-1][0])
     cscore = call_ns_run(xc)
-    h_progress.write(str(call_ns_run.counter) + ' Contraction  ' + str(xc) +  ' ' + str(score) + '\n')
+    h_progress.write(str(call_ns_run.counter) + ' Contraction  ' + str(xc) +  ' ' + str(cscore) + '\n')
     if cscore < res[-1][1]:
         del res[-1]
         res.append([xc, cscore])
