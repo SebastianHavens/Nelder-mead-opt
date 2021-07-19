@@ -90,7 +90,7 @@ else:
 
 # NM parameters
 step = 0.05
-no_improv_thr = 20
+no_improve_thr = 20
 n_improv_break= 3
 max_iter = 15
 alpha = 1.
