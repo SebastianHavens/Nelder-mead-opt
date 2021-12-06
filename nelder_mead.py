@@ -20,7 +20,8 @@ def find_peak():
     T, Cp = np.loadtxt('pf', usecols=(0, 4), unpack=True)
     index_PT = np.where(Cp == np.amax(Cp))
     print(int(T[index_PT]))
-    return (abs(experimental - int(T[index_PT])))
+    
+    return (abs(experimental - (int(T[index_PT]) - 224  )) #Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
 
 
 # Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
@@ -29,6 +30,8 @@ def gen_poten(param):
     matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
                                           (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
                                           'eam/alloy')
+    print('Current parameters:')
+    print(param)
 
 
 # Starts nested sampling calculation
