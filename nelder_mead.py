@@ -21,7 +21,7 @@ def find_peak():
     index_PT = np.where(Cp == np.amax(Cp))
     print(int(T[index_PT]))
     
-    return (abs(experimental - (int(T[index_PT]) - 224  )) #Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
+    return (abs(experimental - (int(T[index_PT]) - 224  ))) #Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
 
 
 # Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
