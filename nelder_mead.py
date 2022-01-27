@@ -11,19 +11,25 @@ import shelve
 
 
 # Returns absolute value of distance from experimental value
-def find_peak():
+def find_peak(prefix, target):
     try:
-        os.system('./ns_analyse 32Cu.energies -M 1 -n 1000 -D 5 > pf')
+        os.system('./ns_analyse ' + str(prefix) + '.energies -M 1 -n 1000 -D 5 > ' + str(prefix) + '.dat')
     except:
         print('Error calling ns_analyse')
         exit()
-    T, Cp = np.loadtxt('pf', usecols=(0, 4), unpack=True)
+    T, Cp = np.loadtxt((str(prefix) + '.dat'), usecols=(0, 4), unpack=True)
     index_PT = np.where(Cp == np.amax(Cp))
     index_PT = index_PT[0]
-    #If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those with the same heat capactity
+    # If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those with the same heat capactity
     index_PT = index_PT[0]
     print(T[index_PT])
-    return (abs(experimental - (int(T[index_PT]) - 252  ))) #Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
+    # Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
+        
+    h_progress1 = open('progress1', 'a')
+    h_progress1.write(str(call_ns_run.counter)  + ' ' + str(T[index_PT]) + '\n')
+    h_progress1.close()
+
+    return (abs(target - (int(T[index_PT]) - 252   )))
 
 # Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
 def gen_poten(param):
@@ -50,7 +56,8 @@ def call_ns_run(param):
     print('Calling ns')
     runtime = time.time()
     try:
-        os.system('srun ./ns_run < 32Cu.input')
+        os.system('srun ./ns_run < 32Cu-0.1.input')
+        os.system('srun ./ns_run < 32Cu-30.input')
     except:
         print('Error calling ns_run')
         exit()
@@ -60,7 +67,9 @@ def call_ns_run(param):
     h_time.write(str(runtime))
     h_time.close()
 
-    score = find_peak()
+    # Requires file prefix and targets
+    score = find_peak('32Cu-0.1',1299)
+    score = score + find_peak('32Cu-30',2149 )
     os.chdir('../')
     call_ns_run.counter += 1
     return score
@@ -105,6 +114,8 @@ sigma = 0.5
 
 # Starting parameters
 x_start = np.array([1.0, 1.0, 1.0])
+
+#If two pressures used, needs to be sum of both values.
 experimental = 1400
 
 stage = None
