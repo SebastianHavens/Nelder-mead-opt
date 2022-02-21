@@ -128,7 +128,7 @@ if restart == True:
 
     call_ns_run_counter = 6
     load_variables()
-    restart == True # This has to be here otherwise when loading variables it will reset to true.
+    restart = True # This has to be here otherwise when loading variables it will reset to true.
     print('have my vars loaded?')
     print(rscore)
     # reflection
