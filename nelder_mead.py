@@ -126,7 +126,6 @@ experimental = 1400
 stage = None
 if restart == True:
 
-    call_ns_run_counter = 6
     load_variables()
     restart = True # This has to be here otherwise when loading variables it will reset to true.
     print('have my vars loaded?')
@@ -193,11 +192,14 @@ if restart == True:
 if restart == False:
     call_ns_run_counter = 0
     h_progress = open('progress', 'a')
-    h_progress.write('NS count:  Stage:  Parameters:   Score:')
+    h_progress.write('NS count:  Stage:  Parameters:   Score: \n' )
     h_progress.close()
     # init
     dim = len(x_start)
     prev_best = call_ns_run(x_start)
+    h_progress = open('progress', 'a')
+    h_progress.write(str(call_ns_run_counter) + ' Init ' + str(x) + ' ' + str(score) + '\n')
+    h_progress.close()
     no_improv = 0
     res = [[x_start, prev_best]]
     iters = 0
@@ -221,6 +223,9 @@ while 1:
     if max_iter and iters >= max_iter:
         print('Reached max number of iterations')
         print(res[0])
+        h_progress = open('progress', 'a')
+        h_progress.write('Reached max number of iterations \n')
+        h_progress.close()
         exit()
     iters += 1
 
@@ -242,6 +247,9 @@ while 1:
     if no_improv >= no_improv_break:
         print('Reached max number of iterations without a significant improvement')
         print(res[0])
+        h_progress = open('progress', 'a')
+        h_progress.write('Reached max number of iterations without significant improvement \n')
+        h_progress.close()
         exit()
 
     # centroid
