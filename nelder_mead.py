@@ -10,7 +10,6 @@ import time
 import shelve
 
 
-
 # Returns absolute value of distance from experimental value
 def find_peak(prefix, target):
     try:
@@ -21,31 +20,56 @@ def find_peak(prefix, target):
     T, Cp = np.loadtxt((str(prefix) + '.dat'), usecols=(0, 4), unpack=True)
     index_PT = np.where(Cp == np.amax(Cp))
     index_PT = index_PT[0]
-    # If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those with the same heat capactity
+    # If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those
+    # with the same heat capacity
     index_PT = index_PT[0]
     print(T[index_PT])
-    # Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
-        
+    # Calculate error from experimental value, we take away an amount dependent on the system size effects from out
+    # calculated phase transition temperature..
+
     h_progress1 = open('progress1', 'a')
-    h_progress1.write(str(call_ns_run_counter)  + ' ' + str(T[index_PT]) + '\n')
+    h_progress1.write(str(call_ns_run_counter) + ' ' + str(T[index_PT]) + '\n')
     h_progress1.close()
 
-    return (abs(target - (int(T[index_PT]) - 252   )))
+    return abs(target - (int(T[index_PT]) - 252))
+
 
 # Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
-def gen_poten(param):
-    potential = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
-    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
-                                          (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
-                                          'eam/alloy')
-    print('Current parameters:')
-    print(param)
 
+# Modifying each part of the potential by a single factor
+# def gen_poten(param):
+#    potential = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
+#    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
+#                                          (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
+#                                          'eam/alloy')
+#    print('Current parameters:')
+#   print(param)
+
+
+# Function to multiply values in the potential with a linear line across the radius.
+# Create line with the same number of value as the potential and multiply against the potential
+def gen_poten(param):
+    potential: str = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
+
+    graph_1 = potential[2]
+    graph_2 = potential[3]
+    graph_3 = potential[4]
+
+    line_1 = np.arange(param[0],param[1], (abs(param[1] - param[0])) / np.size(graph_1))
+    line_2 = np.arange(param[2],param[3], (abs(param[3] - param[2])) / np.size(graph_2))
+    line_3 = np.arange(param[4],param[5], (abs(param[5] - param[4])) / np.size(graph_3))
+
+    new_graph_1 = (np.multiply(graph_1, line_1))
+    new_graph_2 = (np.multiply(graph_2, line_2))
+    new_graph_3 = (np.multiply(graph_3, line_3))
+
+
+    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], new_graph_1, new_graph_2, new_graph_3, 'test.eam.alloy', 'eam/alloy')
 
 # Starts nested sampling calculation
 def call_ns_run(param):
-    # See if folder exists already, if it does we've restarted and we want to restart the ns calculation
-    global call_ns_run_counter 
+    # See if folder exists already, if it does we've restarted, and we want to restart the ns calculation
+    global call_ns_run_counter
     if not os.path.isdir(str(call_ns_run_counter)):
         shutil.copytree('run', str(call_ns_run_counter))
     os.chdir(str(call_ns_run_counter))
@@ -70,8 +94,8 @@ def call_ns_run(param):
     h_time.close()
 
     # Requires file prefix and targets
-    score = find_peak('32Cu-0.1',1299)
-    score = score + find_peak('32Cu-30',2149 )
+    score = find_peak('32Cu-0.1', 1299)
+    score = score + find_peak('32Cu-30', 2149)
     os.chdir('../')
     call_ns_run_counter += 1
     return score
@@ -104,7 +128,7 @@ if "-r" in opts:
 else:
     restart = False
 
-##TEMPORARY
+# TEMPORARY
 
 
 # NM parameters
@@ -120,14 +144,14 @@ sigma = 0.5
 # Starting parameters
 x_start = np.array([1.0, 1.0, 1.0])
 
-#If two pressures used, needs to be sum of both values.
+# If two pressures used, needs to be sum of both values.
 experimental = 1400
 
 stage = None
-if restart == True:
+if restart:
 
     load_variables()
-    restart = True # This has to be here otherwise when loading variables it will reset to true.
+    restart = True  # This has to be here otherwise when loading variables it will reset to true.
     print('have my vars loaded?')
     print(rscore)
     # reflection
@@ -189,10 +213,10 @@ if restart == True:
         res = nres
 
 # Progress file
-if restart == False:
+if not restart:
     call_ns_run_counter = 0
     h_progress = open('progress', 'a')
-    h_progress.write('NS count:  Stage:  Parameters:   Score: \n' )
+    h_progress.write('NS count:  Stage:  Parameters:   Score: \n')
     h_progress.close()
     # init
     dim = len(x_start)
