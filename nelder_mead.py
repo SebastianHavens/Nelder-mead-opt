@@ -10,24 +10,31 @@ import time
 import shelve
 
 
+
 # Returns absolute value of distance from experimental value
-def find_peak():
+def find_peak(prefix, target):
     try:
-        os.system('./ns_analyse 32Cu.energies -M 1 -n 1000 -D 5 > pf')
+        os.system('./ns_analyse ' + str(prefix) + '.energies -M 1 -n 1000 -D 5 > ' + str(prefix) + '.dat')
     except:
         print('Error calling ns_analyse')
         exit()
-    T, Cp = np.loadtxt('pf', usecols=(0, 4), unpack=True)
+    T, Cp = np.loadtxt((str(prefix) + '.dat'), usecols=(0, 4), unpack=True)
     index_PT = np.where(Cp == np.amax(Cp))
     index_PT = index_PT[0]
-    #If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those with the same heat capactity
+    # If multiple temperatures have the same value for hear capacity, this will select the lowest temperature of those with the same heat capactity
     index_PT = index_PT[0]
     print(T[index_PT])
-    return (abs(experimental - (int(T[index_PT]) - 252  ))) #Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
+    # Calculate error from experimental value, we take away an amount dependent on the system size effects from out calciulated phase transition temperature..
+        
+    h_progress1 = open('progress1', 'a')
+    h_progress1.write(str(call_ns_run_counter)  + ' ' + str(T[index_PT]) + '\n')
+    h_progress1.close()
+
+    return (abs(target - (int(T[index_PT]) - 252   )))
 
 # Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
 def gen_poten(param):
-    potential = matscipy.calculators.eam.io.read_eam('Cu_Zhou04.eam.alloy', 'eam/alloy')
+    potential = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
     matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
                                           (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
                                           'eam/alloy')
@@ -38,9 +45,10 @@ def gen_poten(param):
 # Starts nested sampling calculation
 def call_ns_run(param):
     # See if folder exists already, if it does we've restarted and we want to restart the ns calculation
-    if not os.path.isdir(str(call_ns_run.counter)):
-        shutil.copytree('run', str(call_ns_run.counter))
-    os.chdir(str(call_ns_run.counter))
+    global call_ns_run_counter 
+    if not os.path.isdir(str(call_ns_run_counter)):
+        shutil.copytree('run', str(call_ns_run_counter))
+    os.chdir(str(call_ns_run_counter))
     try:
         os.system('gen-ns')
     except:
@@ -50,7 +58,8 @@ def call_ns_run(param):
     print('Calling ns')
     runtime = time.time()
     try:
-        os.system('srun ./ns_run < 32Cu.input')
+        os.system('srun ./ns_run < 32Cu-0.1.input')
+        os.system('srun ./ns_run < 32Cu-30.input')
     except:
         print('Error calling ns_run')
         exit()
@@ -60,9 +69,11 @@ def call_ns_run(param):
     h_time.write(str(runtime))
     h_time.close()
 
-    score = find_peak()
+    # Requires file prefix and targets
+    score = find_peak('32Cu-0.1',1299)
+    score = score + find_peak('32Cu-30',2149 )
     os.chdir('../')
-    call_ns_run.counter += 1
+    call_ns_run_counter += 1
     return score
 
 
@@ -93,6 +104,9 @@ if "-r" in opts:
 else:
     restart = False
 
+##TEMPORARY
+
+
 # NM parameters
 step = 0.05
 no_improve_thr = 20
@@ -105,17 +119,23 @@ sigma = 0.5
 
 # Starting parameters
 x_start = np.array([1.0, 1.0, 1.0])
+
+#If two pressures used, needs to be sum of both values.
 experimental = 1400
 
 stage = None
 if restart == True:
+
     load_variables()
+    restart = True # This has to be here otherwise when loading variables it will reset to true.
+    print('have my vars loaded?')
+    print(rscore)
     # reflection
     if stage == 0:
         xr = x0 + alpha * (x0 - res[-1][0])
         rscore = call_ns_run(xr)
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) + ' ' + str(rscore) + '\n')
+        h_progress.write(str(call_ns_run_counter) + ' Reflection ' + str(xr) + ' ' + str(rscore) + '\n')
         h_progress.close()
         if res[0][1] <= rscore < res[-2][1]:
             del res[-1]
@@ -129,7 +149,7 @@ if restart == True:
             xe = x0 + gamma * (x0 - res[-1][0])
             escore = call_ns_run(xe)
             h_progress = open('progress', 'a')
-            h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) + ' ' + str(escore) + '\n')
+            h_progress.write(str(call_ns_run_counter) + ' Expansion ' + str(xe) + ' ' + str(escore) + '\n')
             h_progress.close()
             if escore < rscore:
                 del res[-1]
@@ -145,7 +165,7 @@ if restart == True:
         xc = x0 + rho * (x0 - res[-1][0])
         cscore = call_ns_run(xc)
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run.counter) + ' Contraction ' + str(xc) + ' ' + str(cscore) + '\n')
+        h_progress.write(str(call_ns_run_counter) + ' Contraction ' + str(xc) + ' ' + str(cscore) + '\n')
         h_progress.close()
         if cscore < res[-1][1]:
             del res[-1]
@@ -163,20 +183,23 @@ if restart == True:
             redx = x1 + sigma * (tup[0] - x1)
             score = call_ns_run(redx)
             h_progress = open('progress', 'a')
-            h_progress.write(str(call_ns_run.counter) + ' Reduction ' + str(redx) + ' ' + str(score) + '\n')
+            h_progress.write(str(call_ns_run_counter) + ' Reduction ' + str(redx) + ' ' + str(score) + '\n')
             h_progress.close()
             nres.append([redx, score])
         res = nres
 
 # Progress file
 if restart == False:
-    call_ns_run.counter = 0
+    call_ns_run_counter = 0
     h_progress = open('progress', 'a')
-    h_progress.write('NS count:  Stage:  Parameters:   Score:')
+    h_progress.write('NS count:  Stage:  Parameters:   Score: \n' )
     h_progress.close()
     # init
     dim = len(x_start)
     prev_best = call_ns_run(x_start)
+    h_progress = open('progress', 'a')
+    h_progress.write(str(call_ns_run_counter) + ' Init ' + str(x) + ' ' + str(score) + '\n')
+    h_progress.close()
     no_improv = 0
     res = [[x_start, prev_best]]
     iters = 0
@@ -186,7 +209,7 @@ if restart == False:
         x[i] = x[i] + step
         score = call_ns_run(x)
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run.counter) + ' Init ' + str(x) + ' ' + str(score) + '\n')
+        h_progress.write(str(call_ns_run_counter) + ' Init ' + str(x) + ' ' + str(score) + '\n')
         h_progress.close()
         res.append([x, score])
 
@@ -200,6 +223,9 @@ while 1:
     if max_iter and iters >= max_iter:
         print('Reached max number of iterations')
         print(res[0])
+        h_progress = open('progress', 'a')
+        h_progress.write('Reached max number of iterations \n')
+        h_progress.close()
         exit()
     iters += 1
 
@@ -221,6 +247,9 @@ while 1:
     if no_improv >= no_improv_break:
         print('Reached max number of iterations without a significant improvement')
         print(res[0])
+        h_progress = open('progress', 'a')
+        h_progress.write('Reached max number of iterations without significant improvement \n')
+        h_progress.close()
         exit()
 
     # centroid
@@ -235,7 +264,7 @@ while 1:
     xr = x0 + alpha * (x0 - res[-1][0])
     rscore = call_ns_run(xr)
     h_progress = open('progress', 'a')
-    h_progress.write(str(call_ns_run.counter) + ' Reflection ' + str(xr) + ' ' + str(rscore) + '\n')
+    h_progress.write(str(call_ns_run_counter) + ' Reflection ' + str(xr) + ' ' + str(rscore) + '\n')
     h_progress.close()
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
@@ -249,7 +278,7 @@ while 1:
         xe = x0 + gamma * (x0 - res[-1][0])
         escore = call_ns_run(xe)
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run.counter) + ' Expansion ' + str(xe) + ' ' + str(escore) + '\n')
+        h_progress.write(str(call_ns_run_counter) + ' Expansion ' + str(xe) + ' ' + str(escore) + '\n')
         h_progress.close()
         if escore < rscore:
             del res[-1]
@@ -266,7 +295,7 @@ while 1:
     xc = x0 + rho * (x0 - res[-1][0])
     cscore = call_ns_run(xc)
     h_progress = open('progress', 'a')
-    h_progress.write(str(call_ns_run.counter) + ' Contraction  ' + str(xc) + ' ' + str(cscore) + '\n')
+    h_progress.write(str(call_ns_run_counter) + ' Contraction  ' + str(xc) + ' ' + str(cscore) + '\n')
     h_progress.close()
     if cscore < res[-1][1]:
         del res[-1]
@@ -284,7 +313,7 @@ while 1:
         redx = x1 + sigma * (tup[0] - x1)
         score = call_ns_run(redx)
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run.counter) + ' Reduction  ' + str(redx) + ' ' + str(score) + '\n')
+        h_progress.write(str(call_ns_run_counter) + ' Reduction  ' + str(redx) + ' ' + str(score) + '\n')
         h_progress.close()
         nres.append([redx, score])
     res = nres
