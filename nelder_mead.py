@@ -33,21 +33,10 @@ def find_peak(prefix, target):
 
     return abs(target - (int(T[index_PT]) - 252))
 
-
-# Generates potential from list of parameters to modify original potential by. [embedded, density, potential]
-
-# Modifying each part of the potential by a single factor
-# def gen_poten(param):
-#    potential = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
-#    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
-#                                          (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
-#                                          'eam/alloy')
-#    print('Current parameters:')
-#   print(param)
-
-
 # Function to multiply values in the potential with a linear line across the radius.
 # Create line with the same number of value as the potential and multiply against the potential
+# If statement to deal with if parameters are the same resulting in a flat line - Line spacing calculated using
+# difference between parameters so need another method when they're the same.
 def gen_poten(param):
     potential: str = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
 
@@ -55,16 +44,28 @@ def gen_poten(param):
     graph_2 = potential[3]
     graph_3 = potential[4]
 
-    line_1 = np.arange(param[0],param[1], (abs(param[1] - param[0])) / np.size(graph_1))
-    line_2 = np.arange(param[2],param[3], (abs(param[3] - param[2])) / np.size(graph_2))
-    line_3 = np.arange(param[4],param[5], (abs(param[5] - param[4])) / np.size(graph_3))
+    if param[1] == param[0]:
+        line_1 = np.full(np.size(graph_1), param[0])
+    else:
+        line_1 = np.arange(param[0], param[1], (abs(param[1] - param[0])) / np.size(graph_1))
+
+    if param[2] == param[3]:
+        line_2 = np.arange(param[2], param[3], (abs(param[3] - param[2])) / np.size(graph_2))
+    else:
+        line_2 = np.full(np.size(graph_2), param[2])
+
+    if param[4] == param[5]:
+        line_3 = np.full(np.size(graph_3), param[4])
+    else:
+        line_3 = np.arange(param[4], param[5], (abs(param[5] - param[4])) / np.size(graph_3))
 
     new_graph_1 = (np.multiply(graph_1, line_1))
     new_graph_2 = (np.multiply(graph_2, line_2))
     new_graph_3 = (np.multiply(graph_3, line_3))
 
+    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], new_graph_1, new_graph_2, new_graph_3,
+                                          'test.eam.alloy', 'eam/alloy')
 
-    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], new_graph_1, new_graph_2, new_graph_3, 'test.eam.alloy', 'eam/alloy')
 
 # Starts nested sampling calculation
 def call_ns_run(param):
