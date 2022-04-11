@@ -1,0 +1,37 @@
+COMPATABILITY NOTES FOR NELDER_MEAD.PY
+
+AVON: nelder_mead.py ns_run command must be called with mpirun
+AVON: node-opt file
+
+#!/bin/bash
+
+
+
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=48
+#SBATCH --mem-per-cpu=3700
+#SBATCH --time=00:10:00
+
+
+
+module load openmpi/4.0.5-gcc-8.3.1
+export OMP_NUM_THREADS=1
+
+./nelder_mead.py  > out
+
+
+
+GODZILLA: nelder_mead.py ns_run command must be called with srun
+GODZILLA: node-opt file
+
+#SBATCH --ntasks-per-node=48
+#SBATCH --mem-per-cpu=3700
+#SBATCH --time=96:00:00
+
+#SBATCH --partition=hodgkin
+
+module load GCC/7.3.0-2.30 OpenMPI/3.1.1
+export OMP_NUM_THREADS=1
+
+./nelder_mead.py  > out
+
