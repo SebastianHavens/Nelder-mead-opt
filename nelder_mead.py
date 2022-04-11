@@ -50,10 +50,10 @@ def gen_poten(param):
         line_1 = np.arange(param[0], param[1], (abs(param[1] - param[0])) / np.size(graph_1))
 
     if param[2] == param[3]:
-        line_2 = np.arange(param[2], param[3], (abs(param[3] - param[2])) / np.size(graph_2))
-    else:
         line_2 = np.full(np.size(graph_2), param[2])
-
+    else:
+        line_2 = np.arange(param[2], param[3], (abs(param[3] - param[2])) / np.size(graph_2))
+        
     if param[4] == param[5]:
         line_3 = np.full(np.size(graph_3), param[4])
     else:
