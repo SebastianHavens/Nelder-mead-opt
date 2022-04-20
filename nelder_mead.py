@@ -47,17 +47,17 @@ def gen_poten(param):
     if param[1] == param[0]:
         line_1 = np.full(np.size(graph_1), param[0])
     else:
-        line_1 = np.arange(param[0], param[1], (abs(param[1] - param[0])) / np.size(graph_1))
+        line_1 = np.arange(param[0], param[1], ((param[1] - param[0]) / np.size(graph_1)))
 
     if param[2] == param[3]:
         line_2 = np.full(np.size(graph_2), param[2])
     else:
-        line_2 = np.arange(param[2], param[3], (abs(param[3] - param[2])) / np.size(graph_2))
+        line_2 = np.arange(param[2], param[3], ((param[3] - param[2]) / np.size(graph_2)))
         
     if param[4] == param[5]:
         line_3 = np.full(np.size(graph_3), param[4])
     else:
-        line_3 = np.arange(param[4], param[5], (abs(param[5] - param[4])) / np.size(graph_3))
+        line_3 = np.arange(param[4], param[5], ((param[5] - param[4]) / np.size(graph_3)))
 
     new_graph_1 = (np.multiply(graph_1, line_1))
     new_graph_2 = (np.multiply(graph_2, line_2))
