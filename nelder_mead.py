@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from typing import TextIO
 
 import numpy as np
 import copy
@@ -6,9 +7,11 @@ import matscipy.calculators.eam.calculator
 import os
 import shutil
 import time
+from config import *
 
 
 # Returns absolute value of distance from experimental value
+
 def find_peak(prefix, target):
     if os.path.exists(str(prefix) + '_pt_temp'):
         pt_temp = int(np.loadtxt(str(prefix) + '_pt_temp'))
@@ -76,9 +79,12 @@ def gen_poten(param):
 
 
 # Starts nested sampling calculation
+
+
 def call_ns_run(param):
     # See if folder exists already, if it does we've restarted, and we want to restart the ns calculation
     global call_ns_run_counter
+    iter_score = 0
     if not os.path.isdir(str(call_ns_run_counter)):
         shutil.copytree('run', str(call_ns_run_counter))
     os.chdir(str(call_ns_run_counter))
@@ -91,10 +97,11 @@ def call_ns_run(param):
     print('Calling ns')
     runtime = time.time()
     try:
-        os.system('srun ./ns_run < 32Cu-0.1.input')
-        os.system('srun ./ns_run < 32Cu-30.input')
+        for x in range(len(prefixes)):
+            os.system('srun ./ns_run < ' + str(prefixes[x]) + '.input')
+            iter_score += iter_score + find_peak(prefixes[x], targets[x])
     except:
-        print('Error calling ns_run')
+        print('Error calling ns_run or ns_analyse')
         exit()
     print('NS finished')
     runtime = (time.time() - runtime) / 3600
@@ -102,41 +109,29 @@ def call_ns_run(param):
     h_time.write(str(runtime))
     h_time.close()
 
-    # Requires file prefix and targets
-    score = find_peak('32Cu-0.1', 1299)
-    score = score + find_peak('32Cu-30', 2149)
     os.chdir('../')
     call_ns_run_counter += 1
-    return score
+    return iter_score
 
 
-# NM parameters
-step = 0.05
-no_improve_thr = 20
-no_improv_break = 3
-max_iter = 15
-alpha = 1.
-gamma = 2.
-rho = -0.5
-sigma = 0.5
-
-# Starting parameters
-x_start = np.array([1.0, 1.0, 1.0])
-finite_size_offset = -252  # Difference between infinite system size and finite system size (infinite - finite)
-
-# Progress file
+def write_progress_file(stage = None, current_parameter= None, current_score= None):
+    if not os.path.exists('progress'):
+        h_progress = open('progress', 'a')
+        h_progress.write('NS count:  Stage:  Parameters:   Score: \n')
+        h_progress.close()
+    else:
+        h_progress = open('progress', 'a')
+        h_progress.write(str(call_ns_run_counter) + ' ' + str(stage) + str(current_parameter) + ' ' + str(current_score)+ '\n')
+        h_progress.close()
 
 
 call_ns_run_counter = 0
-h_progress = open('progress', 'a')
-h_progress.write('NS count:  Stage:  Parameters:   Score: \n')
-h_progress.close()
-# init
+write_progress_file()
+
+# initalisation
 dim = len(x_start)
 prev_best = call_ns_run(x_start)
-h_progress = open('progress', 'a')
-h_progress.write(str(call_ns_run_counter) + ' Init ' + str(x_start) + ' ' + str(prev_best) + '\n')
-h_progress.close()
+write_progress_file('Init', x_start, prev_best)
 no_improv = 0
 res = [[x_start, prev_best]]
 iters = 0
@@ -145,9 +140,7 @@ for i in range(dim):
     x = copy.copy(x_start)
     x[i] = x[i] + step
     score = call_ns_run(x)
-    h_progress = open('progress', 'a')
-    h_progress.write(str(call_ns_run_counter) + ' Init ' + str(x) + ' ' + str(score) + '\n')
-    h_progress.close()
+    write_progress_file('Init', x, score)
     res.append([x, score])
 
 # simplex iter
@@ -159,22 +152,9 @@ while 1:
     # break after max_iter
     if max_iter and iters >= max_iter:
         print('Reached max number of iterations')
-        print(res[0])
-        h_progress = open('progress', 'a')
-        h_progress.write('Reached max number of iterations \n')
-        h_progress.close()
-        exit()
     iters += 1
 
-    # break after no_improv_break iterations with no improvement
-    print('...best so far:', str(best))
-    h_best = open('track_best', 'a')
-    h_best.write('best so far: ' + str(res[0]) + '\n')
-    h_best.close()
 
-    h_track = open('track', 'a')
-    h_track.write(str(iters) + ': ' + str(res) + '\n')
-    h_track.close()
     if best < prev_best - no_improve_thr:
         no_improv = 0
         prev_best = best
@@ -184,9 +164,6 @@ while 1:
     if no_improv >= no_improv_break:
         print('Reached max number of iterations without a significant improvement')
         print(res[0])
-        h_progress = open('progress', 'a')
-        h_progress.write('Reached max number of iterations without significant improvement \n')
-        h_progress.close()
         exit()
 
     # centroid
@@ -198,9 +175,7 @@ while 1:
     # reflection
     xr = x0 + alpha * (x0 - res[-1][0])
     rscore = call_ns_run(xr)
-    h_progress = open('progress', 'a')
-    h_progress.write(str(call_ns_run_counter) + ' Reflection ' + str(xr) + ' ' + str(rscore) + '\n')
-    h_progress.close()
+    write_progress_file('Reflection', xr, rscore)
     if res[0][1] <= rscore < res[-2][1]:
         del res[-1]
         res.append([xr, rscore])
@@ -210,9 +185,7 @@ while 1:
     if rscore < res[0][1]:
         xe = x0 + gamma * (x0 - res[-1][0])
         escore = call_ns_run(xe)
-        h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run_counter) + ' Expansion ' + str(xe) + ' ' + str(escore) + '\n')
-        h_progress.close()
+        write_progress_file('Expansion', xe, escore)
         if escore < rscore:
             del res[-1]
             res.append([xe, escore])
@@ -225,9 +198,7 @@ while 1:
     # contraction
     xc = x0 + rho * (x0 - res[-1][0])
     cscore = call_ns_run(xc)
-    h_progress = open('progress', 'a')
-    h_progress.write(str(call_ns_run_counter) + ' Contraction  ' + str(xc) + ' ' + str(cscore) + '\n')
-    h_progress.close()
+    write_progress_file('Contraction', xc, cscore)
     if cscore < res[-1][1]:
         del res[-1]
         res.append([xc, cscore])
@@ -241,8 +212,6 @@ while 1:
     for tup in res:  # might be a bug here from the loop type change, check
         redx = x1 + sigma * (tup[0] - x1)
         score = call_ns_run(redx)
-        h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run_counter) + ' Reduction  ' + str(redx) + ' ' + str(score) + '\n')
-        h_progress.close()
+        write_progress_file('Reduction', redx, score)
         nres.append([redx, score])
     res = nres
