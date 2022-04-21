@@ -1,7 +1,11 @@
 import numpy as np
 
-
+method = 'line'  # Factor or line
 x_start = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])  # Must be a numpy array
+
+
+potential_name = 'Cu01.eam.alloy'
+potential_type = 'eam/alloy'  # Will not work for other types yet
 finite_size_offset = -252  # Difference between infinite system size and finite system size (infinite - finite)
 
 # Must be the same number of prefixes and targets.

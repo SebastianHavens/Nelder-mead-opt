@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from typing import TextIO
 
-import numpy as np
 import copy
-import matscipy.calculators.eam.calculator
 import os
 import shutil
 import time
+import matscipy.calculators.eam.calculator
+
 from config import *
 
 
@@ -47,39 +46,46 @@ def find_peak(prefix, target):
 # If statement to deal with if parameters are the same resulting in a flat line - Line spacing calculated using
 # difference between parameters so need another method when they're the same.
 
-
 def gen_poten(param):
-    potential = matscipy.calculators.eam.io.read_eam('Cu01.eam.alloy', 'eam/alloy')
+    potential = matscipy.calculators.eam.io.read_eam(potential_name, potential_type)
+    if method == 'line':
 
-    graph_1 = potential[2]
-    graph_2 = potential[3]
-    graph_3 = potential[4]
+        graph_1 = potential[2]
+        graph_2 = potential[3]
+        graph_3 = potential[4]
 
-    if param[1] == param[0]:
-        line_1 = np.full(np.size(graph_1), param[0])
+        if param[1] == param[0]:
+            line_1 = np.full(np.size(graph_1), param[0])
+        else:
+            line_1 = np.arange(param[0], param[1], ((param[1] - param[0]) / np.size(graph_1)))
+
+        if param[2] == param[3]:
+            line_2 = np.full(np.size(graph_2), param[2])
+        else:
+            line_2 = np.arange(param[2], param[3], ((param[3] - param[2]) / np.size(graph_2)))
+
+        if param[4] == param[5]:
+            line_3 = np.full(np.size(graph_3), param[4])
+        else:
+            line_3 = np.arange(param[4], param[5], ((param[5] - param[4]) / np.size(graph_3)))
+
+        new_graph_1 = (np.multiply(graph_1, line_1))
+        new_graph_2 = (np.multiply(graph_2, line_2))
+        new_graph_3 = (np.multiply(graph_3, line_3))
+
+        matscipy.calculators.eam.io.write_eam(potential[0], potential[1], new_graph_1, new_graph_2, new_graph_3,
+                                              'test.eam.alloy', 'eam/alloy')
+    elif method == 'factor':
+
+        matscipy.calculators.eam.io.write_eam(potential[0], potential[1], (potential[2] * param[0]),
+                                              (potential[3] * param[1]), (potential[4] * param[2]), 'test.eam.alloy',
+                                              'eam/alloy')
     else:
-        line_1 = np.arange(param[0], param[1], ((param[1] - param[0]) / np.size(graph_1)))
-
-    if param[2] == param[3]:
-        line_2 = np.full(np.size(graph_2), param[2])
-    else:
-        line_2 = np.arange(param[2], param[3], ((param[3] - param[2]) / np.size(graph_2)))
-
-    if param[4] == param[5]:
-        line_3 = np.full(np.size(graph_3), param[4])
-    else:
-        line_3 = np.arange(param[4], param[5], ((param[5] - param[4]) / np.size(graph_3)))
-
-    new_graph_1 = (np.multiply(graph_1, line_1))
-    new_graph_2 = (np.multiply(graph_2, line_2))
-    new_graph_3 = (np.multiply(graph_3, line_3))
-
-    matscipy.calculators.eam.io.write_eam(potential[0], potential[1], new_graph_1, new_graph_2, new_graph_3,
-                                          'test.eam.alloy', 'eam/alloy')
+        print('No method defined')
+        exit()
 
 
 # Starts nested sampling calculation
-
 
 def call_ns_run(param):
     # See if folder exists already, if it does we've restarted, and we want to restart the ns calculation
@@ -97,9 +103,9 @@ def call_ns_run(param):
     print('Calling ns')
     runtime = time.time()
     try:
-        for x in range(len(prefixes)):
-            os.system('srun ./ns_run < ' + str(prefixes[x]) + '.input')
-            iter_score += iter_score + find_peak(prefixes[x], targets[x])
+        for i in range(len(prefixes)):
+            os.system('srun ./ns_run < ' + str(prefixes[i]) + '.input')
+            iter_score += iter_score + find_peak(prefixes[i], targets[i])
     except:
         print('Error calling ns_run or ns_analyse')
         exit()
@@ -114,14 +120,15 @@ def call_ns_run(param):
     return iter_score
 
 
-def write_progress_file(stage = None, current_parameter= None, current_score= None):
+def write_progress_file(stage=None, current_parameter=None, current_score=None):
     if not os.path.exists('progress'):
         h_progress = open('progress', 'a')
         h_progress.write('NS count:  Stage:  Parameters:   Score: \n')
         h_progress.close()
     else:
         h_progress = open('progress', 'a')
-        h_progress.write(str(call_ns_run_counter) + ' ' + str(stage) + str(current_parameter) + ' ' + str(current_score)+ '\n')
+        h_progress.write(str(call_ns_run_counter) + ' ' + str(stage) + str(current_parameter) + ' ' + str(current_score)
+                         + '\n')
         h_progress.close()
 
 
@@ -153,7 +160,6 @@ while 1:
     if max_iter and iters >= max_iter:
         print('Reached max number of iterations')
     iters += 1
-
 
     if best < prev_best - no_improve_thr:
         no_improv = 0
