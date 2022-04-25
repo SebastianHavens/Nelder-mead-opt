@@ -31,10 +31,6 @@ def find_peak(prefix, target):
         h_pt_temp.write(str(pt_temp))
         h_pt_temp.close()
 
-        h_progress1 = open('progress1', 'a')
-        h_progress1.write(str(call_ns_run_counter) + ' ' + str(t[index_of_phase_transition]) + '\n')
-        h_progress1.close()
-
         return abs(target - (pt_temp + finite_size_offset))
 
 
@@ -126,7 +122,7 @@ def write_progress_file(stage=None, current_parameter=None, current_score=None):
 call_ns_run_counter = 0
 write_progress_file()
 
-# initalisation
+# initialization
 dim = len(x_start)
 prev_best = call_ns_run(x_start)
 write_progress_file('Init', x_start, prev_best)
