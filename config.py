@@ -21,3 +21,5 @@ alpha = 1.
 gamma = 2.
 rho = -0.5
 sigma = 0.5
+
+# For restarting calculations, start the calculations as normal.
