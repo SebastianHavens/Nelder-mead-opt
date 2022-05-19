@@ -1,5 +1,7 @@
 import numpy as np
 
+NS_location = '' # Path to your NS src directory where ns_run and ns_analyse are found
+
 method = 'line'  # Factor or line
 x_start = np.array([1.0, 1.0, 1.0, 1.0, 1.0, 1.0])  # Must be a numpy array
 

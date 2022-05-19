@@ -17,8 +17,8 @@ def find_peak(prefix, target):
         return abs(target - (pt_temp + finite_size_offset))
 
     else:
-        subprocess.run('./ns_analyse ' + str(prefix) + '.energies -M 1 -n 1000 -D 5 > ' + str(prefix) + '.dat',
-                       check=True, shell=True)
+        subprocess.run(str(NS_location) + 'ns_analyse ' + str(prefix) + '.energies -M 1 -n 1000 -D 5 > ' + str(prefix)
+                       + '.dat', check=True, shell=True)
 
         t, cp = np.loadtxt((str(prefix) + '.dat'), usecols=(0, 4), unpack=True)
         index_of_phase_transition = np.where(cp == np.amax(cp))
@@ -87,13 +87,12 @@ def call_ns_run(param):
     if not os.path.isdir(str(call_ns_run_counter)):
         shutil.copytree('run', str(call_ns_run_counter))
     os.chdir(str(call_ns_run_counter))
-    subprocess.run('gen-ns', check=True, shell=True)
     gen_poten(param)
     print('Calling ns')
     runtime = time.time()
 
     for j in range(len(prefixes)):
-        subprocess.run('srun ./ns_run < ' + str(prefixes[j]) + '.input', check=True, shell=True)
+        subprocess.run('srun ' + str(NS_location) + 'ns_run < ' + str(prefixes[j]) + '.input', check=True, shell=True)
         iter_score += iter_score + find_peak(prefixes[j], targets[j])
 
     print('NS finished')
